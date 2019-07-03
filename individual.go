@@ -96,3 +96,9 @@ func (indi Individual) IdxOfClosest(indis Individuals, dm DistanceMemoizer) (i i
 	}
 	return i
 }
+
+// ApplyExtraOperator applies the given operator to the Genome
+func (indi *Individual) ApplyExtraOperator(operator ExtraOperator, rng *rand.Rand) {
+	indi.Genome = operator.Operator(indi.Genome, rng)
+	indi.Evaluated = false
+}

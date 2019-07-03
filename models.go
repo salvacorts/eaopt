@@ -103,10 +103,19 @@ func (mod ModGenerational) Validate() error {
 
 // ModSteadyState implements the steady state model.
 type ModSteadyState struct {
-	Selector  Selector
+	Selector Selector
+	//ApplyToN  uint
 	KeepBest  bool
 	MutRate   float64
 	CrossRate float64
+
+	// Specific for EA-MLP
+	ExtraOperators []ExtraOperator
+}
+
+type ExtraOperator struct {
+	Operator    func(Genome, *rand.Rand) Genome
+	Probability float64
 }
 
 // Apply ModSteadyState.
@@ -119,6 +128,7 @@ func (mod ModSteadyState) Apply(pop *Population) error {
 	if pop.RNG.Float64() < mod.CrossRate {
 		offsprings[0].Crossover(offsprings[1], pop.RNG)
 	}
+
 	// Apply mutation to the offsprings
 	if mod.MutRate > 0 {
 		if pop.RNG.Float64() < mod.MutRate {
@@ -128,6 +138,18 @@ func (mod ModSteadyState) Apply(pop *Population) error {
 			offsprings[1].Mutate(pop.RNG)
 		}
 	}
+
+	for _, operator := range mod.ExtraOperators {
+		if operator.Probability > 0 {
+			if pop.RNG.Float64() < operator.Probability {
+				offsprings[0].ApplyExtraOperator(operator, pop.RNG)
+			}
+			if pop.RNG.Float64() < operator.Probability {
+				offsprings[1].ApplyExtraOperator(operator, pop.RNG)
+			}
+		}
+	}
+
 	if mod.KeepBest {
 		// Replace the chosen individuals with the best individuals
 		offsprings[0].Evaluate()

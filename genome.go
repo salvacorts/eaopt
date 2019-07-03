@@ -11,3 +11,11 @@ type Genome interface {
 	Crossover(genome Genome, rng *rand.Rand)
 	Clone() Genome
 }
+
+// A GenomeMLP is the same as Genome but with Specific genetic operators for EA-MLP
+type GenomeMLP interface {
+	AddLayer(rng *rand.Rand)
+	RemoveLayer(rng *rand.Rand)
+	SubstituteNeuron(rng *rand.Rand)
+	Train(rng *rand.Rand)
+}
