@@ -25,11 +25,17 @@ func CrossUniformFloat64(p1 []float64, p2 []float64, rng *rand.Rand) {
 // Contains the deterministic part of the GNX method for testing purposes.
 func gnx(p1, p2 Slice, indexes []int) {
 	var (
-		n      = p1.Len()
+		n      = p1.Len() // TODO: min(p1.Len(), p2.Len())
 		o1     = p1.Copy()
 		o2     = p2.Copy()
 		toggle = true
 	)
+
+	// If slices have different size, chop until the maximum
+	if p2.Len() < n {
+		n = p2.Len()
+	}
+
 	// Add the first and last indexes
 	indexes = append([]int{0}, indexes...)
 	indexes = append(indexes, n)
@@ -52,7 +58,13 @@ func gnx(p1, p2 Slice, indexes []int) {
 // the number of crossovers (aka mirroring segments) to perform. n has to be
 // equal or lower than the number of genes in each parent.
 func CrossGNX(p1 Slice, p2 Slice, n uint, rng *rand.Rand) {
-	var indexes = randomInts(n, 1, p1.Len(), rng)
+	// If slices have different size, chop until the maximum
+	max := p1.Len()
+	if p2.Len() < max {
+		max = p2.Len()
+	}
+
+	var indexes = randomInts(n, 1, max, rng)
 	sort.Ints(indexes)
 	gnx(p1, p2, indexes)
 }
@@ -158,29 +170,29 @@ func ox(p1, p2 Slice, a, b int) {
 		o2 = p2.Copy()
 	)
 	// Create lookup maps to quickly see if a gene has been copied from a parent or not
-  	var p1Occurences, p2Occurences = make(setInt), make(setInt)
-  	for i := b; i < a+n; i++ {
-    	var k = i % n
-    	p1Occurences[p1.At(k)]++
-    	p2Occurences[p2.At(k)]++
-  	}
+	var p1Occurences, p2Occurences = make(setInt), make(setInt)
+	for i := b; i < a+n; i++ {
+		var k = i % n
+		p1Occurences[p1.At(k)]++
+		p2Occurences[p2.At(k)]++
+	}
 	// Keep two indicators to know where to fill the offsprings
 	var j1, j2 = b, b
-  	for i := b; i < b+n; i++ {
-    	var k = i % n
-    	if p1Occurences[p2.At(k)] > 0 {
-      		p1Occurences[p2.At(k)]--
-      		o1.Set(j1%n, p2.At(k))
-      		j1++
-    	}
-    	if p2Occurences[p1.At(k)] > 0 {
-      		p2Occurences[p1.At(k)]--
-      		o2.Set(j2%n, p1.At(k))
-      		j2++
-    	}
-  	}
-  	p1.Replace(o1)
-  	p2.Replace(o2)
+	for i := b; i < b+n; i++ {
+		var k = i % n
+		if p1Occurences[p2.At(k)] > 0 {
+			p1Occurences[p2.At(k)]--
+			o1.Set(j1%n, p2.At(k))
+			j1++
+		}
+		if p2Occurences[p1.At(k)] > 0 {
+			p2Occurences[p1.At(k)]--
+			o2.Set(j2%n, p1.At(k))
+			j2++
+		}
+	}
+	p1.Replace(o1)
+	p2.Replace(o2)
 }
 
 // CrossOX (Ordered Crossover). Part of the first parent's genome is copied onto
