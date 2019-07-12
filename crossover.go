@@ -36,9 +36,14 @@ func gnx(p1, p2 Slice, indexes []int) {
 		n = p2.Len()
 	}
 
-	// Add the first and last indexes
+	// Add the first index
 	indexes = append([]int{0}, indexes...)
-	indexes = append(indexes, n)
+
+	// Add the last index only if it has not been added yet
+	if indexes[len(indexes)-1] < n {
+		indexes = append(indexes, n)
+	}
+
 	for i := 0; i < len(indexes)-1; i++ {
 		if toggle {
 			o1.Slice(indexes[i], indexes[i+1]).Replace(p1.Slice(indexes[i], indexes[i+1]))
@@ -70,7 +75,8 @@ func CrossGNX(p1 Slice, p2 Slice, n uint, rng *rand.Rand) {
 		n = uint(max)
 	}
 
-	var indexes = randomInts(n, 1, max, rng)
+	// Popints should be in the range 1 to Len-1
+	var indexes = randomInts(n, 1, max-1, rng)
 	sort.Ints(indexes)
 	gnx(p1, p2, indexes)
 }
