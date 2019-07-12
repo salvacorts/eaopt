@@ -111,12 +111,15 @@ type ModSteadyState struct {
 
 	// Specific for EA-MLP
 	ExtraOperators []ExtraOperator
+	SortFunc       SortFunction
 }
 
 type ExtraOperator struct {
 	Operator    func(Genome, *rand.Rand) Genome
 	Probability float64
 }
+
+type SortFunction = func(Individuals)
 
 // Apply ModSteadyState.
 func (mod ModSteadyState) Apply(pop *Population) error {
@@ -127,6 +130,8 @@ func (mod ModSteadyState) Apply(pop *Population) error {
 	var offsprings = selected.Clone(pop.RNG)
 	if pop.RNG.Float64() < mod.CrossRate {
 		offsprings[0].Crossover(offsprings[1], pop.RNG)
+		// TODO: Check if it is actually overwritting the two offspings
+		// TODO: Get the other offpring by doing it he other way around
 	}
 
 	// Apply mutation to the offsprings
@@ -155,7 +160,8 @@ func (mod ModSteadyState) Apply(pop *Population) error {
 		offsprings[0].Evaluate()
 		offsprings[1].Evaluate()
 		var indis = Individuals{selected[0], selected[1], offsprings[0], offsprings[1]}
-		indis.SortByFitness()
+		mod.SortFunc(indis)
+		//indis.SortByFitness()
 		pop.Individuals[indexes[0]] = indis[0]
 		pop.Individuals[indexes[1]] = indis[1]
 	} else {

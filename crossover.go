@@ -49,6 +49,7 @@ func gnx(p1, p2 Slice, indexes []int) {
 		}
 		toggle = !toggle // Alternate for the new copying
 	}
+
 	p1.Replace(o1)
 	p2.Replace(o2)
 }
@@ -62,6 +63,11 @@ func CrossGNX(p1 Slice, p2 Slice, n uint, rng *rand.Rand) {
 	max := p1.Len()
 	if p2.Len() < max {
 		max = p2.Len()
+	}
+
+	// If there are less genes than points
+	if uint(max) < n {
+		n = uint(max)
 	}
 
 	var indexes = randomInts(n, 1, max, rng)
