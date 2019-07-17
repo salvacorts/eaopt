@@ -11,6 +11,13 @@ var (
 	errInvalidCrossRate = errors.New("CrossRate should be between 0 and 1")
 )
 
+type ExtraOperator struct {
+	Operator    func(Genome, *rand.Rand) Genome
+	Probability float64
+}
+
+type SortFunction = func(Individuals)
+
 // Two parents are selected from a pool of individuals, crossover is then
 // applied to generate two offsprings. The selection and crossover process is
 // repeated until n offsprings have been generated. If n is uneven then the
@@ -55,6 +62,12 @@ type ModGenerational struct {
 	Selector  Selector
 	MutRate   float64
 	CrossRate float64
+
+	// TODO: Keep best
+
+	// Specific for EA-MLP
+	ExtraOperators []ExtraOperator
+	SortFunc       SortFunction
 }
 
 // Apply ModGenerational.
@@ -70,11 +83,25 @@ func (mod ModGenerational) Apply(pop *Population) error {
 	if err != nil {
 		return err
 	}
+
 	// Apply mutation to the offsprings
 	if mod.MutRate > 0 {
 		offsprings.Mutate(mod.MutRate, pop.RNG)
 	}
+
+	for i := range offsprings {
+		for _, operator := range mod.ExtraOperators {
+			if operator.Probability > 0 {
+				if pop.RNG.Float64() < operator.Probability {
+					offsprings[i].ApplyExtraOperator(operator, pop.RNG)
+				}
+			}
+		}
+	}
+
 	// Replace the old population with the new one
+	// TODO: Check if there is a deep copy
+	// Should be since we are copying pointers
 	copy(pop.Individuals, offsprings)
 	return nil
 }
@@ -113,13 +140,6 @@ type ModSteadyState struct {
 	ExtraOperators []ExtraOperator
 	SortFunc       SortFunction
 }
-
-type ExtraOperator struct {
-	Operator    func(Genome, *rand.Rand) Genome
-	Probability float64
-}
-
-type SortFunction = func(Individuals)
 
 // Apply ModSteadyState.
 func (mod ModSteadyState) Apply(pop *Population) error {
